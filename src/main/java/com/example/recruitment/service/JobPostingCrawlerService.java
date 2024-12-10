@@ -7,6 +7,7 @@ import com.example.recruitment.repository.JobPostingRepository;
 import jakarta.annotation.PreDestroy;
 import java.time.Duration;
 import java.time.LocalDateTime;
+import java.time.ZoneId;
 import java.util.List;
 import java.util.Optional;
 import java.util.Random;
@@ -32,7 +33,7 @@ public class JobPostingCrawlerService {
             + "&company_type=scale001%2Ckosdaq%2Cstock%2Ckospi%2Cscale004%2Cscale003%2Cscale005"
             + "&job_type=2%2C1&search_done=y&recruitPage=";
 
-    private static final int MAX_PAGES = 3;
+    private static final int MAX_PAGES = 10;
     private final Random random = new Random();
 
     public void crawlAndSaveJobPostings() {
@@ -69,52 +70,114 @@ public class JobPostingCrawlerService {
     private void processJobCard(WebElement jobCard) {
         try {
             String title = safeExtractText(jobCard, "h2.job_tit a");
+            // job_sector 내 모든 a 태그의 텍스트 수집
+            List<WebElement> jobSectorLinks = jobCard.findElements(
+                By.cssSelector("div.job_sector a"));
+            StringBuilder descriptionBuilder = new StringBuilder();
+            for (WebElement link : jobSectorLinks) {
+                descriptionBuilder.append(link.getText().trim()).append(", ");
+            }
+            String description = descriptionBuilder.toString().replaceAll(", $", ""); // 마지막 콤마 제거
+            String date = safeExtractText(jobCard, "div.job_date span.date");
+
             WebElement companyElement = jobCard.findElement(
                 By.cssSelector("div.area_corp strong.corp_name a"));
             String companyName = companyElement.getText().trim();
             String companyLink = companyElement.getAttribute("href");
-            String date = safeExtractText(jobCard, "div.job_date span.date");
+            String jobLink = jobCard.findElement(By.cssSelector("h2.job_tit a"))
+                .getAttribute("href");
             String location = safeExtractText(jobCard, "div.job_condition span");
 
-            saveJobPosting(companyName, companyLink, title, location, date);
+            saveJobPosting(companyName, companyLink, title, location, jobLink, description, date);
 
-            // 뒤로 가기 및 페이지 재로딩
-            driver.navigate().back();
-            waitForPageLoad(); // 페이지 완전 로딩 대기
-            System.out.println("이전 페이지로 돌아옴");
 
         } catch (Exception e) {
             System.err.println("Error processing job card: " + e.getMessage());
         }
     }
 
+
     private void saveJobPosting(String companyName, String companyLink, String title,
-        String location, String date) {
+        String location, String jobLink, String discription, String date) {
         try {
             Company company = crawlCompanyDetails(companyLink, companyName);
             Company finalCompany = company;
             company = companyRepository.findByName(companyName)
                 .orElseGet(() -> companyRepository.save(finalCompany));
+            waitRandomTime();
 
-            Optional<JobPosting> existingJob = jobPostingRepository.findByTitleAndCompany(title,
-                company);
-            if (existingJob.isEmpty()) {
-                JobPosting jobPosting = new JobPosting();
-                jobPosting.setCompany(company);
-                jobPosting.setTitle(title);
-                jobPosting.setLocation(location);
-                jobPosting.setCreatedAt(LocalDateTime.now());
-
-                jobPostingRepository.save(jobPosting);
-                System.out.println("새 공고 저장: " + title + " | " + companyName);
+            JobPosting jobPosting = crawlJobDetails(jobLink, company, title, location, discription,
+                date);
+            if (jobPosting != null) {
+                Optional<JobPosting> existingJob = jobPostingRepository.findByTitleAndCompany(title,
+                    company);
+                if (existingJob.isEmpty()) {
+                    jobPostingRepository.save(jobPosting);
+                    System.out.println("새 공고 저장: " + title + " | " + companyName);
+                }
             }
+            waitRandomTime();
         } catch (Exception e) {
             System.err.println("Error saving job posting: " + e.getMessage());
         }
     }
 
-    private Company crawlCompanyDetails(String companyLink, String companyName) {
+    private JobPosting crawlJobDetails(String jobLink, Company company, String title,
+        String location, String description, String date) {
+        try {
+            driver.get(jobLink);
+
+            TimeUnit.SECONDS.sleep(1);
+
+            waitForPageLoad();
+
+            String employmentType = findValueByLabel("근무형태");
+            String salary = findValueByLabel("급여");
+            String education = findValueByLabel("학력");
+            String experience = findValueByLabel("경력");
+
+            JobPosting jobPosting = new JobPosting();
+            jobPosting.setCompany(company);
+            jobPosting.setTitle(title);
+            jobPosting.setLocation(location);
+            jobPosting.setDescription(description);
+            jobPosting.setEmploymentType(employmentType);
+            jobPosting.setSalary(salary);
+            jobPosting.setEducation(education);
+            jobPosting.setExperience(experience);
+            jobPosting.setDeadline(date);
+
+            driver.navigate().back(); // 메인 페이지로 돌아가기
+            waitForPageLoad();
+            return jobPosting;
+        } catch (Exception e) {
+            System.err.println("Error crawling job details: " + e.getMessage());
+            return null;
+        }
+    }
+
+    private String findValueByLabel(String label) {
+        try {
+            List<WebElement> dtElements = driver.findElements(By.cssSelector("dt"));
+            for (WebElement dt : dtElements) {
+                if (dt.getText().trim().contains(label)) {
+                    // dt 옆의 dd 요소 가져오기
+                    WebElement dd = dt.findElement(By.xpath("following-sibling::dd"));
+
+                    // 일반적인 텍스트 반환
+                    return dd.getText().trim();
+                }
+            }
+        } catch (Exception e) {
+            System.err.println("Error finding value for label '" + label + "': " + e.getMessage());
+        }
+        return "";
+    }
+
+    private Company crawlCompanyDetails(String companyLink, String companyName)
+        throws InterruptedException {
         driver.get(companyLink);
+        TimeUnit.SECONDS.sleep(1);
         waitForPageLoad();
 
         String industry = "";
@@ -150,8 +213,9 @@ public class JobPostingCrawlerService {
         company.setCeoName(ceoName);
         company.setBusinessContent(businessContent);
         company.setAddress(address);
-        company.setCreatedAt(LocalDateTime.now());
-
+        company.setCreatedAt(LocalDateTime.now(ZoneId.of("Asia/Seoul")));
+        driver.navigate().back(); // 메인 페이지로 돌아가기
+        waitForPageLoad();
         return company;
     }
 

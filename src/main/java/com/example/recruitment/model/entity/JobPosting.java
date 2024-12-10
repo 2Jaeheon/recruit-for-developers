@@ -11,6 +11,7 @@ import jakarta.persistence.ManyToOne;
 import jakarta.persistence.OneToMany;
 import jakarta.persistence.Table;
 import java.time.LocalDateTime;
+import java.time.ZoneId;
 import java.util.List;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -52,16 +53,15 @@ public class JobPosting {
     @Column
     private String employmentType;
 
-    //우대사항
     @Column
-    private String preferredExperience;
+    private String deadline;
 
     //학력
     @Column
     private String education;
 
     @Column(name = "created_at", updatable = false)
-    private LocalDateTime createdAt = LocalDateTime.now();
+    private LocalDateTime createdAt = LocalDateTime.now(ZoneId.of("Asia/Seoul"));
 
     @OneToMany(mappedBy = "jobPosting", cascade = CascadeType.ALL)
     private List<Application> applications;
