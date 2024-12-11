@@ -30,10 +30,10 @@ public class JobPostingCrawlerService {
 
     private static final String BASE_URL =
         "https://www.saramin.co.kr/zf_user/search?company_cd=0%2C1%2C2%2C3%2C4%2C5%2C6%2C7%2C9%2C10"
-            + "&company_type=scale001%2Ckosdaq%2Cstock%2Ckospi%2Cscale004%2Cscale003%2Cscale005"
-            + "&job_type=2%2C1&search_done=y&recruitPage=";
+            + "&searchType=search&searchword=%EA%B0%9C%EB%B0%9C%EC%9E%90&search_done=y&recruitPage=";
 
-    private static final int MAX_PAGES = 3;
+
+    private static final int MAX_PAGES = 4;
     private final Random random = new Random();
 
     public void crawlAndSaveJobPostings() {

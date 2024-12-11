@@ -24,14 +24,14 @@ public class JobPostingScheduler {
         System.out.println("스케줄링 완료: 채용 공고 크롤링 실행 완료");
     }
 
- /*   *//**
+    /**
      * /     * 테스트용: 매 5분마다 실행
      * - 개발 및 테스트 시 사용 가능
-     *//*
+     */
     @Scheduled(fixedRate = 3000000) //특정 시간마다 실행
     public void testCrawlJobPostings() {
         System.out.println("테스트 스케줄링 시작: 채용 공고 크롤링 실행");
         jobPostingCrawlerService.crawlAndSaveJobPostings();
         System.out.println("테스트 스케줄링 완료: 채용 공고 크롤링 실행 완료");
-    }*/
+    }
 }
