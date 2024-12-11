@@ -31,7 +31,7 @@ public class SeleniumConfig {
         options.addArguments("--no-sandbox");
         options.addArguments("--disable-dev-shm-usage");
 
-        // options.addArguments("--headless"); // 필요 시 활성화 (Headless 모드)
+        options.addArguments("--headless"); // 필요 시 활성화 (Headless 모드)
 
         return new ChromeDriver(options);
     }
