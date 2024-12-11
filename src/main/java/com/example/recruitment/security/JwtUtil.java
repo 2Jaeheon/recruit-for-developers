@@ -4,6 +4,7 @@ import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.SignatureAlgorithm;
 import io.jsonwebtoken.security.Keys;
+import jakarta.servlet.http.HttpServletRequest;
 import java.util.Date;
 import java.util.function.Function;
 import org.springframework.beans.factory.annotation.Value;
@@ -61,6 +62,22 @@ public class JwtUtil {
             .signWith(Keys.hmacShaKeyFor(jwtSecret.getBytes()),
                 SignatureAlgorithm.HS256) // 비밀 키와 서명 알고리즘 설정
             .compact(); // 최종적으로 토큰 문자열 생성
+    }
+
+    public String getToken(HttpServletRequest request) {
+
+        final String authHeader = request.getHeader("Authorization"); // Authorization 헤더 추출
+        final String jwt;        // JWT 토큰을 저장할 변수
+
+        // 1. Authorization 헤더 확인
+        if (authHeader == null || !authHeader.startsWith("Bearer ")) {
+            return null;
+        }
+        // 2. "Bearer " 접두사 제거 후 JWT 추출
+
+        jwt = authHeader.substring(7); // 인덱스 7부터 시작해 토큰만 추출
+
+        return jwt;
     }
 
     /**

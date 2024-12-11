@@ -28,12 +28,21 @@ public class SecurityConfig {
         return http
             .csrf(csrf -> csrf.disable()) // CSRF 비활성화
             .authorizeHttpRequests(auth -> auth
-                .requestMatchers("/auth/register", "/auth/login", "/auth/refresh")
-                .permitAll() // 인증 없이 접근 가능
+                .requestMatchers(
+                    "/auth/register",
+                    "/auth/login",
+                    "/auth/refresh",
+                    "/swagger-ui/**",         // Swagger UI 경로
+                    "/v3/api-docs/**",        // OpenAPI 문서 경로
+                    "/swagger-resources/**",  // Swagger 리소스 경로
+                    "/webjars/**",             // Swagger UI 리소스 경로
+                    "/api-docs/**"                // API 문서 경로
+                ).permitAll()                // 인증 없이 접근 가능
                 .anyRequest().authenticated() // 나머지 요청은 인증 필요
             )
-            .addFilterBefore(jwtAuthenticationFilter,
-                UsernamePasswordAuthenticationFilter.class) // JWT 필터 추가
+            // Swagger 경로에 대해서 JWT 필터 제외
+            .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class)
             .build();
     }
+
 }

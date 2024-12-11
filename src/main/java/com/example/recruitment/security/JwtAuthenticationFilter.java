@@ -50,6 +50,12 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         HttpServletResponse response,
         FilterChain filterChain) throws ServletException, IOException {
 
+        // Swagger 요청은 필터에서 제외
+        String requestURI = request.getRequestURI();
+        if (requestURI.startsWith("/swagger-ui") || requestURI.startsWith("/v3/api-docs")) {
+            filterChain.doFilter(request, response);
+            return; // 필터링 중단
+        }
         final String authHeader = request.getHeader("Authorization"); // Authorization 헤더 추출
         final String jwt;        // JWT 토큰을 저장할 변수
         final String userEmail;  // JWT에서 추출한 사용자 이메일
@@ -116,7 +122,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
         // 3. JSON 형태의 에러 메시지 생성
         Map<String, String> errorResponse = new HashMap<>();
-        errorResponse.put("error", "토큰이 만료되었습니다. 다시 로그인해주세요.");
+        errorResponse.put("error", "JWT Token is expired");
 
         // 4. ObjectMapper를 사용해 JSON 형태로 응답 작성
         response.getWriter().write(new com.fasterxml.jackson.databind.ObjectMapper()

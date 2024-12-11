@@ -98,17 +98,17 @@ public class ApplicationService {
     /**
      * 지원 내역 조회
      *
-     * @param header    인증 헤더 (JWT 토큰)
      * @param status    지원 상태 필터 (PENDING, ACCEPTED, REJECTED)
      * @param sortBy    정렬 기준 필드
      * @param direction 정렬 방향 (asc, desc)
      * @return 지원 내역을 DTO 형태로 반환
      */
-    public List<ApplicationDTO> getApplications(String header, String status, String sortBy,
+    public List<ApplicationDTO> getApplications(HttpServletRequest request, String status,
+        String sortBy,
         String direction) {
+
         // JWT 토큰에서 사용자 이메일 추출
-        String token = header.replace("Bearer ", "");
-        String email = jwtUtil.extractEmail(token);
+        String email = jwtUtil.extractEmail(jwtUtil.getToken(request));
 
         // 사용자 정보 조회
         User user = userRepository.findByEmail(email)
