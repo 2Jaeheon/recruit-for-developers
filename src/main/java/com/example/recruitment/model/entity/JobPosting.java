@@ -53,12 +53,17 @@ public class JobPosting {
     @Column
     private String employmentType;
 
+    //마감일
     @Column
     private String deadline;
 
     //학력
     @Column
     private String education;
+
+    //조회수
+    @Column(nullable = false, columnDefinition = "int default 0")
+    private int viewCount = 0;
 
     @Column(name = "created_at", updatable = false)
     private LocalDateTime createdAt = LocalDateTime.now(ZoneId.of("Asia/Seoul"));
@@ -68,4 +73,6 @@ public class JobPosting {
 
     @OneToMany(mappedBy = "jobPosting", cascade = CascadeType.ALL)
     private List<Bookmark> bookmarks;
+
+
 }

@@ -14,4 +14,5 @@ public class JobPostingDTO {
     private String experience;
     private String companyName;
     private String description;
+    private int viewCount;
 }

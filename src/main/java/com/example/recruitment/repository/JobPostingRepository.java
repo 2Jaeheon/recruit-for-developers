@@ -2,6 +2,7 @@ package com.example.recruitment.repository;
 
 import com.example.recruitment.model.entity.Company;
 import com.example.recruitment.model.entity.JobPosting;
+import java.util.List;
 import java.util.Optional;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -33,28 +34,49 @@ public interface JobPostingRepository extends JpaRepository<JobPosting, Long> {
     Optional<JobPosting> findByTitleAndCompany(String title, Company company);
 
     /**
-     * 필터링 조건에 따라 채용 공고를 조회하는 메서드입니다.
-     * <p>
-     * 사용자가 입력한 필터 값 (지역, 경력, 급여, 기술스택)에 따라 동적으로 쿼리를 생성합니다. 파라미터 값이 null일 경우 해당 조건은 무시됩니다.
-     * </p>
+     * 필터링 및 검색 조건에 맞는 채용 공고를 조회합니다.
      *
-     * @param location   지역 필터 (nullable)
-     * @param experience 경력 필터 (nullable)
-     * @param salary     급여 필터 (nullable)
-     * @param techStack  기술 스택 필터 (nullable)
-     * @param pageable   페이지네이션 및 정렬 정보
-     * @return Page<JobPosting> 필터링된 채용 공고 목록을 페이지 형식으로 반환
+     * @param location    지역 필터
+     * @param experience  경력 필터
+     * @param salary      급여 필터
+     * @param techStack   기술 스택 필터
+     * @param keyword     키워드 검색
+     * @param companyName 회사명 검색
+     * @param position    포지션 검색
+     * @param pageable    페이지네이션 및 정렬 정보
+     * @return 필터링 및 검색된 채용 공고 목록
      */
     @Query("SELECT jp FROM JobPosting jp " +
-        "WHERE (:location IS NULL OR jp.location LIKE %:location%) " + // 지역 필터: null이면 무시
-        "AND (:experience IS NULL OR jp.experience LIKE %:experience%) " + // 경력 필터: null이면 무시
-        "AND (:salary IS NULL OR jp.salary LIKE %:salary%) " + // 급여 필터: null이면 무시
-        "AND (:techStack IS NULL OR jp.description LIKE %:techStack%)")
-    // 기술스택 필터: null이면 무시
-    Page<JobPosting> findByFilters(
-        @Param("location") String location,       // 지역 필터 파라미터
-        @Param("experience") String experience,   // 경력 필터 파라미터
-        @Param("salary") String salary,           // 급여 필터 파라미터
-        @Param("techStack") String techStack,     // 기술스택 필터 파라미터
-        Pageable pageable);                       // 페이지네이션 정보
+        "WHERE (:location IS NULL OR jp.location LIKE %:location%) " +
+        "AND (:experience IS NULL OR jp.experience LIKE %:experience%) " +
+        "AND (:salary IS NULL OR jp.salary LIKE %:salary%) " +
+        "AND (:techStack IS NULL OR jp.description LIKE %:techStack%) " +
+        "AND (:keyword IS NULL OR jp.title LIKE %:keyword% OR jp.description LIKE %:keyword%) " +
+        "AND (:companyName IS NULL OR jp.company.name LIKE %:companyName%) " +
+        "AND (:position IS NULL OR jp.title LIKE %:position%)")
+    Page<JobPosting> findByFiltersAndSearch(
+        @Param("location") String location,
+        @Param("experience") String experience,
+        @Param("salary") String salary,
+        @Param("techStack") String techStack,
+        @Param("keyword") String keyword,
+        @Param("companyName") String companyName,
+        @Param("position") String position,
+        Pageable pageable);
+
+    /**
+     * 같은 회사 또는 비슷한 기술스택을 가진 공고를 찾는 쿼리
+     *
+     * @param companyName 회사명
+     * @param description 기술스택(설명)
+     * @param excludeId   현재 공고 ID (자기 자신 제외)
+     * @return 관련 공고 목록
+     */
+    @Query("SELECT jp FROM JobPosting jp " +
+        "WHERE jp.id != :excludeId AND (jp.company.name = :companyName " +
+        "OR (:keywords IS NOT NULL AND :keywords != '' AND jp.description LIKE %:keywords%))")
+    List<JobPosting> findRelatedJobPostingsByKeywords(
+        @Param("companyName") String companyName,
+        @Param("keywords") String keywords,
+        @Param("excludeId") Long excludeId);
 }

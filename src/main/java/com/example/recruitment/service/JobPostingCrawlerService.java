@@ -146,6 +146,7 @@ public class JobPostingCrawlerService {
             jobPosting.setEducation(education);
             jobPosting.setExperience(experience);
             jobPosting.setDeadline(date);
+            jobPosting.setViewCount(0);
 
             driver.navigate().back(); // 메인 페이지로 돌아가기
             waitForPageLoad();
