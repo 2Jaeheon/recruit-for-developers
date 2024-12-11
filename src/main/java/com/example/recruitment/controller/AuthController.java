@@ -18,19 +18,31 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
-// REST 컨트롤러임을 명시하고, "/auth" 경로로 API 요청을 매핑
+/**
+ * AuthController
+ * <p>
+ * 이 컨트롤러는 인증 및 사용자 관리와 관련된 API를 제공합니다. 경로: "/auth"
+ * <p>
+ * 제공하는 기능:
+ * - 회원 가입
+ * - 로그인 및 토큰 발급
+ * - 회원 정보 조회 및 수정
+ * - 회원 탈퇴
+ * - 토큰 갱신
+ */
 @RestController
 @RequestMapping("/auth")
 @RequiredArgsConstructor // Lombok을 사용해 생성자 주입을 자동으로 생성
 public class AuthController {
 
-    private final UserService userService; // UserService를 의존성 주입받음
+    // 사용자 관련 비즈니스 로직을 처리하는 서비스 클래스
+    private final UserService userService;
 
     /**
      * 회원 가입 API
      *
-     * @param user - 요청 본문(RequestBody)에서 전달된 사용자 정보
-     * @return 성공 메시지 반환
+     * @param user 요청 본문(RequestBody)에서 전달된 사용자 정보
+     * @return ResponseEntity<String> 성공 메시지 반환
      */
     @PostMapping("/register")
     public ResponseEntity<String> register(@RequestBody User user) {
@@ -38,96 +50,98 @@ public class AuthController {
         userService.registerUser(user);
 
         // 성공 메시지를 반환
-        return ResponseEntity.ok("User registered successfully");
+        return ResponseEntity.ok("회원가입이 완료되었습니다.");
     }
 
     /**
      * 로그인 API
      *
-     * @param loginRequest - 로그인 요청 정보 (이메일, 비밀번호)
-     * @param request      - HttpServletRequest (IP 주소 추출용)
-     * @return Access Token 및 Refresh Token 반환
+     * @param loginRequest 로그인 요청 정보 (이메일과 비밀번호)
+     * @param request      HttpServletRequest (IP 주소 추출에 사용)
+     * @return ResponseEntity<Map < String, String>> Access Token 및 Refresh Token 반환
      */
     @PostMapping("/login")
     public ResponseEntity<Map<String, String>> login(@RequestBody LoginRequestDTO loginRequest,
         HttpServletRequest request) {
+        // 사용자 로그인 처리 및 토큰 생성
         Map<String, String> tokens = userService.login(loginRequest.getEmail(),
             loginRequest.getPassword(), request);
+
+        // Access Token과 Refresh Token 반환
         return ResponseEntity.ok(tokens);
     }
 
     /**
      * 회원 정보 조회 API
      *
-     * @param authentication - 인증된 사용자 정보(SecurityContextHolder에서 가져옴)
-     * @return 사용자 프로필 정보 (DTO 형태로 반환)
+     * @param authentication 인증된 사용자 정보 (Spring SecurityContext에서 제공)
+     * @return ResponseEntity<UserProfileDTO> 사용자 프로필 정보 (스킬 포함)
      */
     @GetMapping("/profile")
     public ResponseEntity<UserProfileDTO> getProfile(Authentication authentication) {
-        // 인증된 사용자의 이메일을 SecurityContext에서 가져옴
+        // 인증된 사용자의 이메일 가져오기
         String email = authentication.getName();
 
-        // 서비스 계층을 통해 사용자 정보 조회
-        User user = userService.getUserProfile(email);
+        // 사용자 프로필 및 스킬 정보를 가져와 DTO로 변환
+        UserProfileDTO userProfileDTO = userService.getUserProfileWithSkills(email);
 
-        // 조회된 User 엔티티를 UserProfileDTO로 변환
-        UserProfileDTO userProfileDTO = new UserProfileDTO(
-            user.getId(),            // 사용자 ID
-            user.getEmail(),         // 사용자 이메일
-            user.getName(),          // 사용자 이름
-            user.getRole().name()    // 사용자 역할 (ADMIN, USER 등)
-        );
-
-        // 프로필 정보를 ResponseEntity로 반환
+        // 사용자 프로필 반환
         return ResponseEntity.ok(userProfileDTO);
     }
 
     /**
      * 회원 정보 수정 API
      *
-     * @param authentication - 인증된 사용자 정보
-     * @param updatedUser    - 요청 본문(RequestBody)에서 전달된 수정된 사용자 정보
-     * @return 성공 메시지 반환
+     * @param authentication 인증된 사용자 정보
+     * @param updatedUser    요청 본문(RequestBody)에서 전달된 수정된 사용자 정보
+     * @return ResponseEntity<String> 성공 메시지 반환
      */
     @PutMapping("/profile")
     public ResponseEntity<String> updateProfile(Authentication authentication,
         @RequestBody User updatedUser) {
-        // 인증된 사용자의 이메일을 가져옴
+        // 인증된 사용자의 이메일 가져오기
         String email = authentication.getName();
 
-        // 서비스 계층을 통해 사용자 프로필 정보 업데이트
+        // 사용자 프로필 정보 업데이트
         userService.updateUserProfile(email, updatedUser);
 
         // 성공 메시지 반환
-        return ResponseEntity.ok("Profile updated successfully");
+        return ResponseEntity.ok("회원 정보가 성공적으로 수정되었습니다.");
     }
 
     /**
      * 회원 탈퇴 API
      *
-     * @param authentication - 인증된 사용자 정보
-     * @return 성공 메시지 반환
+     * @param authentication 인증된 사용자 정보
+     * @return ResponseEntity<String> 성공 메시지 반환
      */
     @DeleteMapping("/delete")
     public ResponseEntity<String> deleteUser(Authentication authentication) {
-        // 인증된 사용자의 이메일을 가져옴
+        // 인증된 사용자의 이메일 가져오기
         String email = authentication.getName();
 
-        // 서비스 계층을 통해 사용자 정보 삭제 처리
+        // 사용자 정보 삭제 처리
         userService.deleteUser(email);
 
         // 성공 메시지 반환
-        return ResponseEntity.ok("User deleted successfully");
+        return ResponseEntity.ok("회원 탈퇴가 완료되었습니다.");
     }
 
-
-    // 토큰 갱신
+    /**
+     * 토큰 갱신 API
+     *
+     * @param refreshRequest 요청 본문에서 전달된 Refresh Token
+     * @return ResponseEntity<String> 새로운 Access Token 반환
+     */
     @PostMapping("/refresh")
     public ResponseEntity<String> refreshAccessToken(
         @RequestBody RefreshRequestDTO refreshRequest) {
         System.out.println("토큰 갱신 요청");
+
         // Refresh Token 검증 및 새로운 Access Token 발급
         String newAccessToken = userService.refreshAccessToken(refreshRequest.getRefreshToken());
+
+        // 새 Access Token 반환
         return ResponseEntity.ok("Bearer " + newAccessToken);
     }
 }

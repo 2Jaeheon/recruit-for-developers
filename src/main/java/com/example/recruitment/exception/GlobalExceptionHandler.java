@@ -1,5 +1,6 @@
 package com.example.recruitment.exception;
 
+import io.jsonwebtoken.ExpiredJwtException;
 import java.util.HashMap;
 import java.util.Map;
 import org.springframework.http.HttpStatus;
@@ -48,8 +49,19 @@ public class GlobalExceptionHandler {
         MissingServletRequestParameterException ex) {
         Map<String, String> response = new HashMap<>();
         response.put("error",
-            "Required request parameter '" + ex.getParameterName() + "' is missing");
+            "요청 필수 파라미터 '" + ex.getParameterName() + "'가 누락되었습니다.");
         return new ResponseEntity<>(response, HttpStatus.BAD_REQUEST);
+    }
+
+    /**
+     * JWT 토큰 만료 예외 처리
+     */
+    @ExceptionHandler(ExpiredJwtException.class)
+    @ResponseStatus(HttpStatus.UNAUTHORIZED)
+    public ResponseEntity<Map<String, String>> handleExpiredJwtException(ExpiredJwtException ex) {
+        Map<String, String> response = new HashMap<>();
+        response.put("error", "토큰이 만료되었습니다. 다시 로그인해주세요.");
+        return new ResponseEntity<>(response, HttpStatus.UNAUTHORIZED);
     }
 
     /**
@@ -59,7 +71,7 @@ public class GlobalExceptionHandler {
     @ResponseStatus(HttpStatus.INTERNAL_SERVER_ERROR)
     public ResponseEntity<Map<String, String>> handleGenericException(Exception ex) {
         Map<String, String> response = new HashMap<>();
-        response.put("error", "Internal Server Error: " + ex.getMessage());
+        response.put("error", "서버 내부 오류가 발생했습니다: " + ex.getMessage());
         return new ResponseEntity<>(response, HttpStatus.INTERNAL_SERVER_ERROR);
     }
 }

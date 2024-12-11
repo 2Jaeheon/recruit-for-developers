@@ -1,5 +1,7 @@
 package com.example.recruitment.service;
 
+import com.example.recruitment.model.dto.UserProfileDTO;
+import com.example.recruitment.model.dto.UserSkillDTO;
 import com.example.recruitment.model.entity.LoginHistory;
 import com.example.recruitment.model.entity.User;
 import com.example.recruitment.repository.LoginHistoryRepository;
@@ -8,8 +10,10 @@ import com.example.recruitment.security.JwtUtil;
 import jakarta.servlet.http.HttpServletRequest;
 import java.time.LocalDateTime;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 import javax.validation.ValidationException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -105,6 +109,31 @@ public class UserService {
     public User getUserProfile(String email) {
         return userRepository.findByEmail(email)
             .orElseThrow(() -> new RuntimeException("User not found"));
+    }
+
+    // 사용자 프로필 조회 (UserSkill 포함)
+    public UserProfileDTO getUserProfileWithSkills(String email) {
+        User user = userRepository.findByEmail(email)
+            .orElseThrow(() -> new RuntimeException("User not found"));
+
+        // UserSkill 리스트를 UserSkillDTO로 변환
+        List<UserSkillDTO> skills = user.getUserSkills().stream()
+            .map(skill -> new UserSkillDTO(
+                skill.getSkill().getId(),
+                skill.getSkill().getName(),
+                skill.getProficiencyLevel().name(),
+                skill.getAcquiredAt().toString()
+            ))
+            .collect(Collectors.toList());
+
+        // UserProfileDTO 반환
+        return new UserProfileDTO(
+            user.getId(),
+            user.getEmail(),
+            user.getName(),
+            user.getRole().name(),
+            skills
+        );
     }
 
     /**
