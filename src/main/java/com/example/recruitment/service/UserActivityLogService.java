@@ -25,27 +25,40 @@ public class UserActivityLogService {
     private final JwtUtil jwtUtil;
 
     /**
-     * 사용자 활동 로그를 저장합니다.
+     * 사용자 활동 로그를 저장합니다. (HttpServletRequest 사용)
      *
      * @param request     HTTP 요청 객체
      * @param action      수행된 액션 (API 엔드포인트)
      * @param description 상세 설명
      */
     public void logActivity(HttpServletRequest request, String action, String description) {
-        // 헤더에서 JWT 토큰 추출
         String authHeader = request.getHeader("Authorization");
         if (authHeader == null || !authHeader.startsWith("Bearer ")) {
             return;
         }
-
-        String token = authHeader.substring(7); // "Bearer " 제거
+        String token = authHeader.substring(7);
         String userEmail = jwtUtil.extractEmail(token);
+        saveLog(userEmail, action, description);
+    }
 
-        // 사용자 찾기
+    /**
+     * 사용자 활동 로그를 저장합니다. (HttpServletRequest 없이 직접 이메일 사용)
+     *
+     * @param userEmail   사용자 이메일
+     * @param action      수행된 액션 (API 엔드포인트)
+     * @param description 상세 설명
+     */
+    public void logActivity(String userEmail, String action, String description) {
+        saveLog(userEmail, action, description);
+    }
+
+    /**
+     * 활동 로그 저장 로직
+     */
+    private void saveLog(String userEmail, String action, String description) {
         User user = userRepository.findByEmail(userEmail)
             .orElseThrow(() -> new IllegalArgumentException("User not found"));
 
-        // 로그 저장
         UserActivityLog log = new UserActivityLog();
         log.setUser(user);
         log.setActionType(action);
