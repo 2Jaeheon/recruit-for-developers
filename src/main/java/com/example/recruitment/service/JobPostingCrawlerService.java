@@ -1,3 +1,4 @@
+/*
 package com.example.recruitment.service;
 
 import com.example.recruitment.model.entity.Company;
@@ -244,4 +245,4 @@ public class JobPostingCrawlerService {
             System.out.println("WebDriver 종료 완료");
         }
     }
-}
+}*/

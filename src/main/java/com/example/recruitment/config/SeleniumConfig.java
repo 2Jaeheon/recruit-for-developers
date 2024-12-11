@@ -1,3 +1,4 @@
+/*
 package com.example.recruitment.config;
 
 import java.util.Arrays;
@@ -41,4 +42,4 @@ public class SeleniumConfig {
         Random random = new Random();
         return userAgents.get(random.nextInt(userAgents.size()));
     }
-}
+}*/
