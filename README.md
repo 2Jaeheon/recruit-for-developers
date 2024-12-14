@@ -10,6 +10,8 @@
 
 - Java 17
 - Spring Boot 3.4.0
+- mac OS 15.1.1
+- IntelliJ IDEA 2024.2.4 (Ultimate Edition)
 
 ## 3. API 목록
 
@@ -18,6 +20,7 @@
 ## 4. 실행 방법
 
 1. Repository를 Clone한다.
+2. application.properties 파일을 수정하여 MySql DB 정보를 입력한다.
 2. `./gradlew bootRun` 명령어를 실행한다.
 3. [http://localhost:8080/swagger-ui/index.html](http://localhost:8080/swagger-ui/index.html) 으로
    접속한다.
@@ -36,7 +39,7 @@
 [크롬 다운로드](https://www.google.com/chrome/)<br>
 [크롬 드라이버 다운로드](https://chromedriver.chromium.org/downloads)
 
-데이터베이스는 MySQL을 사용하였으며, application.properties 파일을 수정하여 사용하시면 됩니다.
+데이터베이스는 MySQL을 사용하였으며, 다음과 같이 application.properties 파일을 수정하여 사용하시면 됩니다.
 
 ```
 spring.datasource.url=jdbc:mysql://localhost:3306/recruitments?serverTimezone=Asia/Seoul
@@ -69,3 +72,7 @@ spring.datasource.driver-class-name=com.mysql.cj.jdbc.Driver
 - 채용공고 지원
 - 지원한 채용공고 조회
 - 지원한 채용공고 삭제
+
+## 7. 참고사항
+
+배포는 전북대학교 자체 클라우드인 JCloud를 사용하여 배포하였습니다.
